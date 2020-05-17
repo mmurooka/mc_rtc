@@ -22,6 +22,15 @@ MyFirstController::MyFirstController(mc_rbdyn::RobotModulePtr rm, double dt, con
   // Reduce the posture task stiffness
   postureTask->stiffness(1);
 
+  // In the constructor, create the task and add it to the problem
+  efTask = std::make_shared<mc_tasks::EndEffectorTask>("l_wrist", robots(), 0, 5.0, 500.0);
+  solver().addTask(efTask);
+
+  // Get the task from the JSON/YAML file (tried acoording to tutorial but caused SEGV)
+  // std::string task_file_path("/home/mmurooka/jrl/mc_rtc/my_first_controller/config/task.json");
+  // auto task = mc_tasks::MetaTaskLoader::load(solver(), task_file_path);
+  // solver().addTask(task);
+
   LOG_SUCCESS("MyFirstController init done " << this)
 }
 
@@ -47,6 +56,9 @@ void MyFirstController::reset(const mc_control::ControllerResetData & reset_data
   // In the reset function, reset the task to the current CoM
   comTask->reset();
   comZero = comTask->com();
+
+  // In the reset function, reset the task to the current EF position
+  efTask->reset();
 }
 
 void MyFirstController::switch_target()
