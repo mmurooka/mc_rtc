@@ -1,7 +1,8 @@
 #pragma once
 
 #include <mc_control/mc_controller.h>
-
+// Include the CoM task header (header)
+#include <mc_tasks/CoMTask.h>
 
 #include "api.h"
 
@@ -15,9 +16,16 @@ struct MyFirstController_DLLAPI MyFirstController : public mc_control::MCControl
 private:
     void switch_target();
 
+    void switch_com_target();
+
     mc_rtc::Configuration config_;
 
     // Added to MyFirstController.h in the private members
     int jointIndex = 0;
     bool goingLeft = true;
+
+    // In the class private members (header)
+    std::shared_ptr<mc_tasks::CoMTask> comTask;
+    Eigen::Vector3d comZero;
+    bool comDown = true;
 };
