@@ -3,6 +3,10 @@
 #include <mc_control/mc_controller.h>
 // Include the CoM task header (header)
 #include <mc_tasks/CoMTask.h>
+// Include the EF task header (header)
+#include <mc_tasks/EndEffectorTask.h>
+// Get the task loader in there
+#include <mc_tasks/MetaTaskLoader.h>
 
 #include "api.h"
 
@@ -28,4 +32,7 @@ private:
     std::shared_ptr<mc_tasks::CoMTask> comTask;
     Eigen::Vector3d comZero;
     bool comDown = true;
+
+    // In the class private members (header)
+    std::shared_ptr<mc_tasks::EndEffectorTask> efTask;
 };
