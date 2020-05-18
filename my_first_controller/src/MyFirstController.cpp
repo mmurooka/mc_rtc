@@ -1,5 +1,13 @@
 #include "MyFirstController.h"
 
+
+// Make shorter names for types we will use a lot
+using Color = mc_rtc::gui::Color;
+using PolygonDescription = mc_rtc::gui::plot::PolygonDescription;
+using Range = mc_rtc::gui::plot::Range;
+using Style = mc_rtc::gui::plot::Style;
+using Side = mc_rtc::gui::plot::Side;
+
 MyFirstController::MyFirstController(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config)
   : mc_control::MCController({rm,
         mc_rbdyn::RobotLoader::get_robot_module
@@ -87,6 +95,22 @@ void MyFirstController::reset(const mc_control::ControllerResetData & reset_data
                     mc_rtc::gui::Button("Push", []() { std::cout << "Hello!" << std::endl; }));
   gui()->addElement({"gui_test", "label"},
                     mc_rtc::gui::Label("LabelText", [this]() { return std::to_string(this->phase); }));
+
+  gui()->addPlot("sin(t)",
+                 mc_rtc::gui::plot::X("t",
+                                      [this]() { return this->logger().t(); }),
+                 mc_rtc::gui::plot::Y("sin(t)",
+                                      [this]() { return sin(this->logger().t()); },
+                                      Color::Red)
+                 );
+  gui()->addXYPlot("Circle in a square",
+                   mc_rtc::gui::plot::XY("Circle",
+                                         [this]() { return cos(this->logger().t()); },
+                                         [this]() { return sin(this->logger().t()); },
+                                         Color::Red),
+                   mc_rtc::gui::plot::Polygon("Square",
+                                              []() { return PolygonDescription({{-1, 1}, {-1, 1}, {1, 1}, {1, -1}}, Color::Blue); })
+                   );
 }
 
 void MyFirstController::switch_target()

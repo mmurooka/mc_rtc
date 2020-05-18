@@ -11,7 +11,11 @@
 // In the header
 #include <mc_tasks/SurfaceTransformTask.h>
 
+// Brings in every type we need
+#include <mc_rtc/gui/plot.h>
+
 #include "api.h"
+
 
 // In the header
 enum DoorPhase
