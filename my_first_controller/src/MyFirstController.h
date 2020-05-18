@@ -7,8 +7,19 @@
 #include <mc_tasks/EndEffectorTask.h>
 // Get the task loader in there
 #include <mc_tasks/MetaTaskLoader.h>
+#include <mc_rbdyn/RobotLoader.h>
+// In the header
+#include <mc_tasks/SurfaceTransformTask.h>
 
 #include "api.h"
+
+// In the header
+enum DoorPhase
+  {
+    APPROACH = 0,
+    HANDLE,
+    OPEN
+  };
 
 struct MyFirstController_DLLAPI MyFirstController : public mc_control::MCController
 {
@@ -21,6 +32,8 @@ private:
     void switch_target();
 
     void switch_com_target();
+
+    void switch_phase();
 
     mc_rtc::Configuration config_;
 
@@ -35,4 +48,14 @@ private:
 
     // In the class private members (header)
     std::shared_ptr<mc_tasks::EndEffectorTask> efTask;
+
+    // In the header
+    std::shared_ptr<mc_solver::KinematicsConstraint> doorKinematics;
+    std::shared_ptr<mc_tasks::PostureTask> doorPosture;
+
+    // A private property of our controller
+    DoorPhase phase = APPROACH;
+
+    // In the private members
+    std::shared_ptr<mc_tasks::SurfaceTransformTask> handTask;
 };

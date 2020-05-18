@@ -1,7 +1,11 @@
 #include "MyFirstController.h"
 
 MyFirstController::MyFirstController(mc_rbdyn::RobotModulePtr rm, double dt, const mc_rtc::Configuration & config)
-: mc_control::MCController(rm, dt)
+  : mc_control::MCController({rm,
+        mc_rbdyn::RobotLoader::get_robot_module
+        ("env", std::string(mc_rtc::MC_ENV_DESCRIPTION_PATH) + "/../mc_int_obj_description", std::string("door")),
+        mc_rbdyn::RobotLoader::get_robot_module
+        ("env", std::string(mc_rtc::MC_ENV_DESCRIPTION_PATH), std::string("ground"))}, dt)
 {
   config_.load(config);
   solver().addConstraintSet(contactConstraint);
@@ -10,8 +14,8 @@ MyFirstController::MyFirstController(mc_rbdyn::RobotModulePtr rm, double dt, con
   solver().addTask(postureTask);
   // solver().setContacts({{}});
   solver().setContacts({
-      {robots(), 0, 1, "LeftFoot", "AllGround"},
-        {robots(), 0, 1, "RightFoot", "AllGround"}
+      {robots(), 0, 2, "LeftFoot", "AllGround"},
+        {robots(), 0, 2, "RightFoot", "AllGround"}
     });
 
   jointIndex = robot().jointIndexByName("NECK_Y");
@@ -36,15 +40,17 @@ MyFirstController::MyFirstController(mc_rbdyn::RobotModulePtr rm, double dt, con
 
 bool MyFirstController::run()
 {
-  if(std::abs(postureTask->posture()[jointIndex][0] - robot().mbc().q[jointIndex][0]) < 0.05)
-    {
-      switch_target();
-    }
+  // if(std::abs(postureTask->posture()[jointIndex][0] - robot().mbc().q[jointIndex][0]) < 0.05)
+  //   {
+  //     switch_target();
+  //   }
 
-  if(comTask->eval().norm() < 0.01)
-    {
-      switch_com_target();
-    }
+  // if(comTask->eval().norm() < 0.01)
+  //   {
+  //     switch_com_target();
+  //   }
+
+  switch_phase();
 
   return mc_control::MCController::run();
 }
@@ -59,6 +65,23 @@ void MyFirstController::reset(const mc_control::ControllerResetData & reset_data
 
   // In the reset function, reset the task to the current EF position
   efTask->reset();
+
+  // In the reset function
+  robots().robot(1).posW(sva::PTransformd(sva::RotZ(M_PI), Eigen::Vector3d(0.7, 0.5, 0)));
+
+  // In the reset function
+  doorKinematics = std::make_shared<mc_solver::KinematicsConstraint>(robots(), 1, solver().dt());
+  solver().addConstraintSet(*doorKinematics);
+  doorPosture = std::make_shared<mc_tasks::PostureTask>(solver(), 1, 5.0, 1000.0);
+  solver().addTask(doorPosture);
+  doorPosture->reset();
+
+  // In the reset function
+  // Create the task and add it to the solver
+  handTask = std::make_shared<mc_tasks::SurfaceTransformTask>("RightGripper", robots(), 0, 5.0, 1000.0);
+  solver().addTask(handTask);
+  // Set a target relative to the handle position
+  handTask->target(sva::PTransformd(Eigen::Vector3d(0, 0, -0.025)) * robots().robot(1).surfacePose("Handle"));
 }
 
 void MyFirstController::switch_target()
@@ -88,6 +111,37 @@ void MyFirstController::switch_com_target()
       comTask->com(comZero);
     }
   comDown = !comDown;
+}
+
+// A new method for our controller
+void MyFirstController::switch_phase()
+{
+  if(phase == APPROACH &&
+     handTask->eval().norm() < 0.05 &&
+     handTask->speed().norm() < 1e-4)
+    {
+      // Add a new contact
+      auto contacts = solver().contacts();
+      contacts.emplace_back(robots(), 0, 1, "RightGripper", "Handle");
+      solver().setContacts(contacts);
+      // Remove the surface transform task
+      solver().removeTask(handTask);
+      // Keep the robot in its current posture
+      postureTask->reset();
+      comTask->reset();
+      // Target new handle position
+      doorPosture->target({{"handle", {-1.0}}});
+      // Switch phase
+      phase = HANDLE;
+    }
+  else if(phase == HANDLE &&
+          doorPosture->eval().norm() < 0.01)
+    {
+      // Update door opening target
+      doorPosture->target({{"door", {0.5}}});
+      // Switch phase
+      phase = OPEN;
+    }
 }
 
 CONTROLLER_CONSTRUCTOR("MyFirstController", MyFirstController)
