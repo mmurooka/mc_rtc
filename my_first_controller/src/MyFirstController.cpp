@@ -82,6 +82,11 @@ void MyFirstController::reset(const mc_control::ControllerResetData & reset_data
   solver().addTask(handTask);
   // Set a target relative to the handle position
   handTask->target(sva::PTransformd(Eigen::Vector3d(0, 0, -0.025)) * robots().robot(1).surfacePose("Handle"));
+
+  gui()->addElement({"gui_test", "button"},
+                    mc_rtc::gui::Button("Push", []() { std::cout << "Hello!" << std::endl; }));
+  gui()->addElement({"gui_test", "label"},
+                    mc_rtc::gui::Label("LabelText", [this]() { return std::to_string(this->phase); }));
 }
 
 void MyFirstController::switch_target()
