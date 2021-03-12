@@ -717,7 +717,7 @@ git_dependency_parsing()
   fi
   git_dep_uri_base=${git_dep%%:*}
   if [ "$git_dep_uri_base" = "$git_dep" ]; then
-    git_dep_uri="https://github.com/$git_dep"
+    git_dep_uri="git@github.com:$git_dep"
   else
     git_dep_uri=$git_dep
     git_dep=${git_dep##*:}
